@@ -3,7 +3,11 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"net/http"
 	"time"
 )
 
@@ -28,8 +32,60 @@ func GenerateShortUrl(OriginalURL string) string {
 	return hash[:9]
 }
 
+func CreateAndSave(originalUrl string) string {
+	ShortUrl := GenerateShortUrl(originalUrl)
+
+	id := ShortUrl
+	newData := URL{
+		ID:          id,
+		OriginalURL: originalUrl,
+		ShortUrl:    ShortUrl,
+		CreatedAt:   time.Now(),
+	}
+
+	urlDB[ShortUrl] = newData
+	return ShortUrl
+}
+
+func GetURL(id string) (URL, error) {
+
+	url, err := urlDB[id]
+
+	if !err {
+		return URL{}, errors.New("URL NOT FOUND")
+	}
+
+	return url, nil
+}
+
+func ShortenURLController(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Url string `json:"url"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		http.Error(w, "Invalid Request Body", http.StatusBadRequest)
+		return
+	}
+
+	shortURL := CreateAndSave(data.Url)
+	fmt.Println(shortURL)
+
+	fmt.Fprint(w, shortURL)
+}
+
 func main() {
 	fmt.Println("Setting Up Project.")
-	shrt := GenerateShortUrl("https://helloworld.com")
-	fmt.Println(shrt)
+
+	http.HandleFunc("/shorten", ShortenURLController)
+
+	fmt.Println("Starting the server on PORT 3000")
+	err := http.ListenAndServe(":3000", nil)
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 }
