@@ -70,9 +70,15 @@ func ShortenURLController(w http.ResponseWriter, r *http.Request) {
 	}
 
 	shortURL := CreateAndSave(data.Url)
-	fmt.Println(shortURL)
 
-	fmt.Fprint(w, shortURL)
+	response := struct {
+		ShrtUrl string `json:"shrtUrl"`
+	}{ShrtUrl: shortURL}
+
+	w.Header().Set("Content-type", "application/json")
+	json.NewEncoder(w).Encode(response)
+
+	fmt.Println(shortURL)
 }
 
 func main() {
