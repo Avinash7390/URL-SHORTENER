@@ -81,10 +81,26 @@ func ShortenURLController(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(shortURL)
 }
 
+func RedirectToMainURLController(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Path[len("/redirect/"):]
+
+	url, err := GetURL(id)
+
+	if err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println(id, url.OriginalURL)
+
+	http.Redirect(w, r, url.OriginalURL, http.StatusFound)
+}
+
 func main() {
 	fmt.Println("Setting Up Project.")
 
 	http.HandleFunc("/shorten", ShortenURLController)
+	http.HandleFunc("/redirect/", RedirectToMainURLController)
 
 	fmt.Println("Starting the server on PORT 3000")
 	err := http.ListenAndServe(":3000", nil)
